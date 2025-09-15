@@ -1,0 +1,11 @@
+﻿  IntegralCalculator.cpp
+  SFML 3.0.0 Template.cpp
+  Generating Code...
+C:\Users\SCARLET\Desktop\SFML-3.0.0-windows-vc16-64-bit\SFML-3.0.0\include\SFML\System\Exception.hpp(41,47): warning C4275: non dll-interface class 'std::runtime_error' used as base for dll-interface class 'sf::Exception'
+  (compiling source file 'SFML%203.0.0%20Template.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\include\stdexcept(100,30):
+      see declaration of 'std::runtime_error'
+      C:\Users\SCARLET\Desktop\SFML-3.0.0-windows-vc16-64-bit\SFML-3.0.0\include\SFML\System\Exception.hpp(41,23):
+      see declaration of 'sf::Exception'
+  
+C:\Users\SCARLET\Desktop\Integral Spooky\SFML 3.0.0 Template\SFML 3.0.0 Template.cpp(5,10): error C1083: Cannot open include file: 'IntegralCalculator.cpp': No such file or directory
