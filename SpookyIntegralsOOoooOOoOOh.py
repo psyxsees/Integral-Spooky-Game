@@ -1,11 +1,8 @@
-# Example file showing a basic pygame "game loop"
 import pygame
-import sys
-import os
 import random
-
-from DrawScene import Environment;
-from IntegralSolver import IntegralSolver;
+from sympy import sympify
+from DrawScene import Environment
+from IntegralSolver import IntegralSolver
 
 # pygame setup
 WIDTH, HEIGHT = 800, 600
@@ -13,86 +10,125 @@ pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 running = True
+font = pygame.font.SysFont("consolas", 20)
 
-MAP = Environment("textures/map.png", position=(0,0));
-PINS = Environment("textures/pins.png", position=(0, 0));
-HQ = Environment("textures/hq.png", position=(WIDTH/2 - 32, HEIGHT/2));
-SOLVER = Environment("textures/integralinator.png", position=(WIDTH - 256, HEIGHT - 256));
+MAP = Environment("textures/map.png", position=(0, 0))
+PINS = Environment("textures/pins.png", position=(0, 0))
+HQ = Environment("textures/hq.png", position=(WIDTH/2 - 32, HEIGHT/2))
+SOLVER = Environment("textures/integralinator.png", position=(WIDTH - 256, HEIGHT - 256))
 
-INTEGRAL_SOLVER = IntegralSolver();
-integrals = [[], [], []]
-ID = 0
-command = ""
-i = 0 # quadrant set
-randomIntegral = 0
+INTEGRAL_SOLVER = IntegralSolver()
+integrals = [None, None, None]  # 3 quadrants
+QUADRANT_AREA = 1000000  # area for each quadrant
+CORRUPTED = [0, 0, 0]  # corruption level for each quadrant, when it reaches a threshold(QUADRANT_AREA), game over
+NUM_PINS = [50, 50, 50] # number of pins alive in each quadrant
 tick = 0
 
-def inputs():
-    ID = input() # input id
-    for j in range(len(integrals[i])):
-        if (integrals[i][j][0] == ID):
-            break;
+# input system
+input_text = ""
 
-    # int for integrate
-    # der for derivative - this will be encrypted until you've integrated and called SolveDerivative()
-    command = input() # input command
-    if (command == "int"):
-        integrals[randomIntegral][i][2].INTEGRAL_SOLVER.SolveIntegral(integrals[randomIntegral][i][1])
-        print("Integrated: " + INTEGRAL_SOLVER.MakeReadable(integrals[randomIntegral][i][2]))
-    if (command == "der"):
-        integrals[randomIntegral][i][3].INTEGRAL_SOLVER.MakeReadable(INTEGRAL_SOLVER.SolveDerivative(integrals[randomIntegral][i][2]))
-        integrals[randomIntegral][i][4].INTEGRAL_SOLVER.RateOfChange(integrals[randomIntegral][i][2], tick)
-        integrals[randomIntegral][i][4] *= clock.get_fps() # per second
-        print("Derivative: " + INTEGRAL_SOLVER.MakeReadable(integrals[randomIntegral][i][3]))
-        print("Rate Of Growth at t=" + str(tick) + ": " + str(integrals[randomIntegral][i][4]) + " per second")
+print("Welcome to Spooky Integrals OOoOOoOOoOoh!")
+print("Press ~ for commands / help.")
+
+def help():
+    print ("Press: 1,2,3 inside window to access quadrant commands")
+    print ("Commands:")
+    print ("int - Integrate the equation")
+    print ("der - Differentiate the integrated equation and get rate of change at current time")
+
+def spawnIntegral():
+    quadrant = random.randint(0, 2)
+    newIntegral = INTEGRAL_SOLVER.IntegralTerminal()
+    integrals[quadrant] = newIntegral
+    print(INTEGRAL_SOLVER.MakeReadable(newIntegral["equation"]), "- Q" + str(quadrant + 1))
+
+def handleCommand(active_quadrant):
+    global tick
+    cmd = input("cmd- ")
+
+    eq = integrals[active_quadrant]
+
+    if cmd == "int":
+        result = INTEGRAL_SOLVER.SolveIntegral(eq["equation"])
+        eq["int"] = result
+        print("Integrated:", INTEGRAL_SOLVER.MakeReadable(result))
+    elif cmd == "der":
+        if eq["int"] is None:
+            print("You must integrate before differentiating.")
+            return
+        deriv = INTEGRAL_SOLVER.SolveDerivative(eq["int"])
+        eq["der"] = deriv
+        print("Derivative:", INTEGRAL_SOLVER.MakeReadable(deriv))
+
+        rate = INTEGRAL_SOLVER.RateOfChange(deriv, tick)
+        eq["rate"] = rate
+        print(f"Rate at t={tick}: {rate}")
+    else:
+        print("Unknown command. Use int or der.")
+
+def addCorruption():
+    for i in range(3):
+        if integrals[i] is not None:
+            if INTEGRAL_SOLVER.RateOfChange(integrals[i]["derivative"], tick) >= 0:
+                print ("add corruption")
+                CORRUPTED[i] += float(INTEGRAL_SOLVER.RateOfChange(integrals[i]["derivative"], tick))
+            if (CORRUPTED[i] >= QUADRANT_AREA):
+                print(f"Game Over! Quadrant {i+1} is fully corrupted.")
+                running = False
+                return
+            # draw corruption bar
+            pygame.draw.rect(screen, (255, 0, 0), (10 + i*260, HEIGHT - 30, (CORRUPTED[i]/QUADRANT_AREA)*250, 20))
+            pygame.draw.rect(screen, (255, 255, 255), (10 + i*260, HEIGHT - 30, 250, 20), 2)
+            # draw number of pins
+            pin_text = font.render("Pins: " + str(NUM_PINS[i]), True, (255, 255, 255))
+            screen.blit(pin_text, (10 + i*260, HEIGHT - 60))
+        else:
+            # no active integral in this quadrant
+            pygame.draw.rect(screen, (100, 100, 100), (10 + i*260, HEIGHT - 30, 250, 20), 2)
+            pin_text = font.render("Pins: " + str(NUM_PINS[i]), True, (255, 255, 255))
+            screen.blit(pin_text, (10 + i*260, HEIGHT - 60))
+        
+        # reduce pins based on corruption
+        if CORRUPTED[i] > 0:
+            NUM_PINS[i] = 50 - (50 / (CORRUPTED[i] / QUADRANT_AREA))
+        else:
+            NUM_PINS[i] = 50
 
 while running:
-    # poll for events
-    # pygame.QUIT event means the user clicked X to close your window
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_1:
+                print("Selected Q1")
+                handleCommand(0)
+            elif event.key == pygame.K_2:
+                print("Selected Q2")
+                handleCommand(1)
+            elif event.key == pygame.K_3:
+                print("Selected Q3")
+                handleCommand(2)
+            elif event.key == pygame.K_BACKQUOTE:
+                help()
+            else:
+                input_text += event.unicode
 
-    # Fill background
+    # draw scene
     screen.fill((0, 0, 0))
-
-    # Draw environment texture
     MAP.draw(screen)
     PINS.draw(screen)
     HQ.draw(screen)
     SOLVER.draw(screen)
 
-    randomIntegral = random.randint(0, 1000)
-    if (randomIntegral == 0):
-        randomIntegral = random.randint(0, 2)
-        if (randomIntegral == 0):
-            integrals[0].append(INTEGRAL_SOLVER.IntegralTerminal())
-            print(INTEGRAL_SOLVER.MakeReadable(integrals[0][len(integrals) - 1][1]) + " - Q1")
-        elif (randomIntegral == 1):
-            integrals[1].append(INTEGRAL_SOLVER.IntegralTerminal())
-            print(INTEGRAL_SOLVER.MakeReadable(integrals[1][len(integrals) - 1][1]) + " - Q2")
-        elif (randomIntegral == 2):
-            integrals[2].append(INTEGRAL_SOLVER.IntegralTerminal())
-            print(INTEGRAL_SOLVER.MakeReadable(integrals[2][len(integrals) - 1][1]) + " - Q3")
-    
-    keys = pygame.key.get_pressed()
-    if (keys[pygame.K_1]):
-        print("You selected Q1. Please input the ID of the integral you wish to solve:")
-        i = 0
-        inputs()
-    elif (keys[pygame.K_2]):
-        print("You selected Q2. Please input the ID of the integral you wish to solve:")
-        i = 1
-        inputs()
-    elif (keys[pygame.K_3]):
-        print("You selected Q3. Please input the ID of the integral you wish to solve:")
-        i = 2
-        inputs()
+    # add corruption over time
+    addCorruption()
 
-    # flip() the display to put your work on screen
+    # occasionally spawn new integrals
+    if random.randint(0, 500) == 0:
+        spawnIntegral()
+
     pygame.display.flip()
-
-    clock.tick(60)  # limits FPS to 60
+    clock.tick(60)
     tick += 1
 
 pygame.quit()
