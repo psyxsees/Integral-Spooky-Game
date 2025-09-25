@@ -21,12 +21,17 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="CutscenePlayer.py" />
     <Compile Include="DrawScene.py" />
     <Compile Include="IntegralSolver.py" />
     <Compile Include="SpookyIntegralsOOoooOOoOOh.py" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="death\" />
     <Folder Include="textures\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="death\monsterKill.jpg" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in

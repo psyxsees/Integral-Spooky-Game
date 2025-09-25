@@ -8,3 +8,6 @@ class Environment:
 
     def draw(self, surface):
         surface.blit(self.texture, self.rect)
+
+    def setAlpha(self, alpha):
+        self.texture.set_alpha(alpha)

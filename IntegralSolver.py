@@ -9,6 +9,7 @@ class IntegralSolver:
 
     def IntegralTerminal(self):
         ranInt = random.randint(0, 9)
+        # ranInt = 5 #selectively for testing
         return {
             "equation": self.GetIntegral(ranInt),
             "int": self.Encrypt(),
@@ -39,12 +40,15 @@ class IntegralSolver:
         return options[ranInt]
 
     def SolveIntegral(self, eq):
-        return simplify(integrate(eq, x))
+        #sympify(eq)
+        return str(simplify(integrate(eq, x)))
 
     def SolveDerivative(self, eq):
+        #sympify(eq)
         return simplify(diff(eq, x))
 
     def RateOfChange(self, eq, t):
+        #sympify(eq)
         return simplify(eq.subs(x, t))
 
     def MakeReadable(self, expr):
